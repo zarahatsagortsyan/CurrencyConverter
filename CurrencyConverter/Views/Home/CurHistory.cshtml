@@ -1,0 +1,29 @@
+﻿@model Currency
+@{ Layout = "_Layout"; ViewBag.Title = "All Reservations";}
+
+<h2>Exchange rates</h2>
+
+@*<input type="submit" name="name" value=""  />*@
+<table class="table table-sm table-striped table-bordered m-2">
+    <thead>
+        <tr>
+            <th>Currency</th>
+            <th>saleRateNB</th>
+            <th>purchaseRateNB</th>
+            <th>saleRate</th>
+            <th>purchaseRate</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var r in Model.exchangeRate)
+        {
+            <tr>
+                <td>@r.currency</td>
+                <td>@r.saleRateNB</td>
+                <td>@r.purchaseRateNB</td>
+                <td>@r.saleRate</td>
+                <td>@r.purchaseRate</td>
+            </tr>
+        }
+    </tbody>
+</table>

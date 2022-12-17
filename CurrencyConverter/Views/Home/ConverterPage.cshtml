@@ -1,0 +1,12 @@
+﻿@model CurrencyConverter.ViewModels.ConverterViewModel
+<div asp-validation-summary="All" class="text-danger form-group"></div>
+<form asp-action="ConverterPage" method="post" asp-controller="Home">
+    <label asp-for="convertText" value="@ViewBag.convertText" ><b>Example: 20 usd to uah</b></label><br>
+    <div class="d-inline-block">
+        <div>
+            <input asp-for="convertText" type="text" placeholder="20 usd to uah" required>
+            <button type="submit" class="btn btn-dark">Do</button>
+        </div>
+    </div>
+</form>
+<h4>result: @ViewBag.result</h4>

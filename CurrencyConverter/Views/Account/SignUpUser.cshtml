@@ -1,0 +1,39 @@
+﻿@model CurrencyConverter.ViewModels.RegisterViewModel
+<h2>Registration</h2>
+<link href="../wwwroot/css/loginForm.css" rel="stylesheet" />
+<form asp-action="SignUpUser" asp-controller="Account" class="form-group">
+    <div asp-validation-summary="All" class="text-danger "></div>
+    <div class="form-group w-50 p-0">
+        <label asp-for="Email"><b>Email</b></label>
+        <input asp-for="Email" type="text" placeholder="Email" class=" form-control" required>
+    </div>
+    <div class="form-group w-50 p-0">
+        <label asp-for="FirstName"><b>First Name</b></label>
+        <input asp-for="FirstName" type="text" placeholder="UserName" class=" form-control" required>
+    </div>
+    <div class="form-group w-50 p-0">
+        <label asp-for="LastName"><b>Last Name</b></label>
+        <input asp-for="LastName" type="text" placeholder="UserName" class=" form-control" required>
+    </div>
+    <div class="form-group w-50 p-0">
+        <label asp-for="Password"><b>Password</b></label>
+        <input asp-for="Password" type="password" placeholder="Password" class=" form-control" required>
+    </div>
+    <div class="form-group w-50 p-0">
+        <label asp-for="ConfirmPassword"><b>Password confirmation</b></label>
+        <input asp-for="ConfirmPassword" type="password" placeholder="Password" class=" form-control" required>
+    </div>
+    <div class="form-group w-25 p-0">
+        <label asp-for="BaseCur"><b>Base Currency</b></label>
+        <select asp-for="BaseCur" class="form-control">
+            <option selected>UAH</option>
+            <option>USD</option>
+            <option>EUR</option>
+        </select>
+    </div>
+
+    <div class="container" style="background-color:#f1f1f1">
+        <button type="submit" class="btn btn-primary" value="Login">Login</button>
+        <a asp-action="Index" asp-controller="Home" class=" btn btn-default">Cancel</a>
+    </div>
+</form>

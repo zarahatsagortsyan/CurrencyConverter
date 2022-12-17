@@ -1,0 +1,48 @@
+﻿@{ Layout = "_Layout"; ViewBag.Title = "All Reservations";}
+@{
+    IEnumerable<LatestCurrency> CashRate = ViewData["CashRate"] as IEnumerable<LatestCurrency>;
+    IEnumerable<LatestCurrency> NonCashRate = ViewData["NonCashRate"] as IEnumerable<LatestCurrency>;
+}
+<h2>Exchange rates</h2>
+
+<h6>Cash rate of PrivatBank (in the branches):</h6>
+<table class="table table-sm table-striped table-bordered m-2">
+    <thead>
+        <tr>
+            <th>Currency</th>
+            <th>sale rate</th>
+            <th>purchase rate</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var r in CashRate)
+        {
+            <tr>
+                <td>@r.ccy</td>
+                <td>@r.sale</td>
+                <td>@r.buy</td>
+            </tr>
+        }
+    </tbody>
+</table>
+<br />
+<h6>Non-cash exchange rate of PrivatBank (conversion by cards, Privat24, replenishment of deposits):</h6>
+<table class="table table-sm table-striped table-bordered m-2">
+    <thead>
+        <tr>
+            <th>Currency</th>
+            <th>sale rate</th>
+            <th>purchase rate</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var r in NonCashRate)
+        {
+            <tr>
+                <td>@r.ccy</td>
+                <td>@r.sale</td>
+                <td>@r.buy</td>
+            </tr>
+        }
+    </tbody>
+</table>
