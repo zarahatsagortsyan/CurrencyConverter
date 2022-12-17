@@ -1,10 +1,27 @@
-﻿@{ Layout = "_Layout"; ViewBag.Title = "All Reservations";}
+﻿@{ Layout = "_Layout"; ViewBag.Title = "Converter";}
+@model CurrencyConverter.ViewModels.ConverterViewModel
 @{
     IEnumerable<LatestCurrency> CashRate = ViewData["CashRate"] as IEnumerable<LatestCurrency>;
     IEnumerable<LatestCurrency> NonCashRate = ViewData["NonCashRate"] as IEnumerable<LatestCurrency>;
 }
 <h2>Exchange rates</h2>
 
+@if (!(User.Identity.IsAuthenticated))
+{
+    <form asp-action="Index" method="get" asp-controller="Home" class="m-1" id="base_form">
+        <label><b>base currency</b></label><br>
+        <div class="d-inline-block">
+            <select class="form-control" value="@ViewBag.convertText" asp-for="base_ccy" id="base_ccy">
+                <option>UAH</option>
+                <option>USD</option>
+                <option>EUR</option>
+            </select>
+        </div>
+        @*<button class="btn btn-dark btn-sm" type="submit">Save</button>*@
+    </form>
+
+}
+<br />
 <h6>Cash rate of PrivatBank (in the branches):</h6>
 <table class="table table-sm table-striped table-bordered m-2">
     <thead>
@@ -46,3 +63,13 @@
         }
     </tbody>
 </table>
+@section scripts {
+    <script type="text/javascript">
+        $("body").on("change", "#base_ccy", function () {
+            //$("#base_ccy").val($(this).find("option:selected").text());
+            document.forms["base_form"].submit();
+        });
+    </script>
+
+}
+

@@ -1,4 +1,5 @@
 ﻿@model Users
+@{ Layout = "_Layout"; ViewBag.Title = "Converter";}
 <section>
     <div class="container">
         <div class=" bg-stack-overflow pace-panel "><h4>Edit</h4></div>
@@ -7,11 +8,11 @@
             <form asp-action="ChangeUserInfo" method="post">
                 <div class=" form-group w-50 p-0" hidden>
                     <label asp-for="Id">ID</label>
-                    <input asp-for="Id"  class=" form-control col-xs-3" readonly="readonly" />
+                    <input asp-for="Id" class=" form-control col-xs-3" readonly="readonly" />
                 </div>
                 <div class=" form-group w-50 p-0" hidden>
                     <label asp-for="Email">Email</label>
-                    <input asp-for="Email" class="form-control col-xs-3" readonly/>
+                    <input asp-for="Email" class="form-control col-xs-3" readonly />
                 </div>
                 <div class=" form-group w-50 p-0" hidden>
                     <label asp-for="FirstName">First Name</label>
@@ -19,7 +20,7 @@
                 </div>
                 <div class=" form-group w-50 p-0" hidden>
                     <label asp-for="LastName">Last Name</label>
-                    <input asp-for="LastName" class="form-control " readonly/>
+                    <input asp-for="LastName" class="form-control " readonly />
                 </div>
                 <div class=" form-group w-50 p-0">
                     <label asp-for="BaseCur">Base Currency</label>

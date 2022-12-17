@@ -19,7 +19,6 @@ namespace CurrencyConverter.Controllers
     public class HomeController : Controller
     {
         readonly ApplicationDbContext db;
-        Parser _parser = new Parser();
 
         public HomeController(ApplicationDbContext context)
         {
@@ -29,7 +28,6 @@ namespace CurrencyConverter.Controllers
         [HttpGet]
         public async Task<IActionResult> CurHistory()
         {
-            ViewData["Users"] = db.Users.ToList();
             Currency currency = new Currency();
             using (var httpClient = new HttpClient())
             {
@@ -39,13 +37,21 @@ namespace CurrencyConverter.Controllers
                     currency = JsonConvert.DeserializeObject<Currency>(apiResponse);
                 }
             }
+
+            ViewData["Users"] = db.Users.ToList();
+
             return View(currency);
         }
 
-        [HttpGet]
-        public async Task<IActionResult> Index()
+        #region GettingCurrenciesFromPrivatBank
+        public async Task<IActionResult> Index(ConverterViewModel viewModel)
         {
-            string base_ccy = "UAH";
+            string base_ccy;
+            base_ccy = "UAH";
+
+            if (viewModel.base_ccy != null)
+                base_ccy = viewModel.base_ccy;
+
             List<LatestCurrency> CashRate = new List<LatestCurrency>();
             List<LatestCurrency> NonCashRate = new List<LatestCurrency>();
 
@@ -80,7 +86,6 @@ namespace CurrencyConverter.Controllers
             List<LatestCurrency> curByBaseNonCash = new List<LatestCurrency>();
             curByBaseNonCash = ExchangeByBaseCCY(base_ccy, NonCashRate);
 
-            ViewData["Users"] = db.Users.ToList();
             if (base_ccy == "UAH")
             {
                 ViewData["CashRate"] = CashRate;
@@ -91,9 +96,15 @@ namespace CurrencyConverter.Controllers
                 ViewData["CashRate"] = curByBaseCash;
                 ViewData["NonCashRate"] = curByBaseNonCash;
             }
+            ViewData["Users"] = db.Users.ToList();
+
             return View();
         }
 
+        #endregion
+
+        #region CalculatingRatesByBase
+        [HttpGet]
         public static List<LatestCurrency> ExchangeByBaseCCY(string base_ccy, List<LatestCurrency> CashRate)
         {
             List<LatestCurrency> curByBase = new List<LatestCurrency>();
@@ -139,7 +150,9 @@ namespace CurrencyConverter.Controllers
 
             return curByBase;
         }
+        #endregion
 
+        #region ConverterPage
         [HttpGet]
         public IActionResult ConverterPage()
         {
@@ -153,6 +166,7 @@ namespace CurrencyConverter.Controllers
         {
             Dictionary<string, dynamic> curPairs = new Dictionary<string, dynamic>();
             List<LatestCurrency> latestCurrencies = new List<LatestCurrency>();
+            ViewData["Users"] = db.Users.ToList();
 
             dynamic from_cur, to_cur, amount;
             string from_cur_str, to_cur_str;
@@ -186,12 +200,13 @@ namespace CurrencyConverter.Controllers
                 return View();
             }
 
-            ViewData["Users"] = db.Users.ToList();
             ViewBag.convertText = converter.convertText;
             ViewBag.result = sale * Convert.ToDouble(amount);
             return View();
         }
+        #endregion
 
+        #region validatingSearchInput
         public static bool ErrorRedirection(Dictionary<string, dynamic> curPairs, ModelStateDictionary ModelState)
         {
             dynamic value;
@@ -221,6 +236,8 @@ namespace CurrencyConverter.Controllers
             }
             return true;
         }
+
+        #endregion
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()

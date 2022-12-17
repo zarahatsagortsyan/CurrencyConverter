@@ -22,9 +22,13 @@ namespace CurrencyConverter.Controllers
             db = context;
         }
 
+        #region SignInUser
+
         [HttpGet]
         public IActionResult SignInUser()
         {
+            ViewData["Users"] = db.Users.ToList();
+
             return View();
         }
         [HttpPost]
@@ -45,12 +49,19 @@ namespace CurrencyConverter.Controllers
                 }
                 ModelState.AddModelError("", "Wrong password or e-mail!");
             }
+            ViewData["Users"] = db.Users.ToList();
+
             return View(model);
         }
+        #endregion
 
+
+        #region SignUpUser
         [HttpGet]
         public IActionResult SignUpUser()
         {
+            ViewData["Users"] = db.Users.ToList();
+
             return View();
         }
 
@@ -59,6 +70,8 @@ namespace CurrencyConverter.Controllers
         public async Task<IActionResult> SignUpUser(RegisterViewModel model)
         {
             // bool checkPhone = PhoneNumberChecker.CheckPhoneNumber(model.Phone);
+            ViewData["Users"] = db.Users.ToList();
+
             if (ModelState.IsValid)
             {
                 if (model.ConfirmPassword != model.Password)
@@ -90,27 +103,29 @@ namespace CurrencyConverter.Controllers
                 }
             }
             return View(model);
-    }
+        }
+        #endregion
 
-    private async Task Authenticate(string userName)
-    {
-        // ստեղծում ենք մեկ Claim
-        var claims = new List<Claim>
+
+        private async Task Authenticate(string userName)
+        {
+            // ստեղծում ենք մեկ Claim
+            var claims = new List<Claim>
             {
                 new Claim(ClaimsIdentity.DefaultNameClaimType, userName)
             };
-        // ստեղծում ենք ClaimsIdentity օբյեկտ
-        ClaimsIdentity id = new ClaimsIdentity(claims, "ApplicationCookie", ClaimsIdentity.DefaultNameClaimType, ClaimsIdentity.DefaultRoleClaimType);
-        // ներբեռնում ենք աուտենտիֆիկացիոն քուքիները
-        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(id));
-    }
+            // ստեղծում ենք ClaimsIdentity օբյեկտ
+            ClaimsIdentity id = new ClaimsIdentity(claims, "ApplicationCookie", ClaimsIdentity.DefaultNameClaimType, ClaimsIdentity.DefaultRoleClaimType);
+            // ներբեռնում ենք աուտենտիֆիկացիոն քուքիները
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(id));
+        }
 
-    [HttpPost]
-    public async Task<IActionResult> Logout()
-    {
-        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-        return Redirect("/Home/Index");
-    }
+        [HttpPost]
+        public async Task<IActionResult> Logout()
+        {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return Redirect("/Home/Index");
+        }
         [Authorize]
         [HttpGet]
         public IActionResult ChangeUserInfo(Guid id)
