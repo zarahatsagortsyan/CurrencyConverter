@@ -58,13 +58,13 @@ namespace CurrencyConverter.Functions
         public static void ConvertCurrency(List<LatestCurrency> latestCurrencies, string from_cur, string to_cur, out double sale, out double buy)
         {
             sale = -1;
-            buy= -1;
+            buy = -1;
 
             if (from_cur == "UAH" && (to_cur == "USD" || to_cur == "EUR"))
             {
                 getSaleRate(latestCurrencies, to_cur, out sale, out buy);
-                sale = (double)1 / sale;
-                buy = (double)1 / buy;
+                sale = Math.Round((double)1 / sale, 5);
+                buy = Math.Round((double)1 / buy, 5);
             }
             else if ((from_cur == "USD" || from_cur == "EUR") && to_cur == "UAH")
             {
@@ -76,8 +76,8 @@ namespace CurrencyConverter.Functions
                 getSaleRate(latestCurrencies, from_cur, out sale, out buy);
                 getSaleRate(latestCurrencies, to_cur, out rate_sale_to, out buy);
 
-                sale = (1 / rate_sale_to) / (1 / sale);
-                buy = (1 / rate_sale_to) / (1 / buy);
+                sale = Math.Round((1 / rate_sale_to) / (1 / sale), 5);
+                buy = Math.Round((1 / rate_sale_to) / (1 / buy), 5);
 
             }
         }
