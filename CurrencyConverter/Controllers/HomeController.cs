@@ -79,7 +79,7 @@ namespace CurrencyConverter.Controllers
         public async Task<IActionResult> ConverterPage(ConverterViewModel converter)
         {
             Dictionary<string, string> curPairs = new Dictionary<string, string>();
-            CurrencyCode from_cur_str, to_cur_str;
+            CurrencyCode from_cur_code, to_cur_code;
             string from_cur, to_cur, amount;
             double convertedAmount;
 
@@ -93,12 +93,12 @@ namespace CurrencyConverter.Controllers
             curPairs.TryGetValue("toCurr", out to_cur);
             curPairs.TryGetValue("sum", out amount);
 
-            Enum.TryParse<CurrencyCode>(from_cur.ToUpper(), out from_cur_str);
-            Enum.TryParse<CurrencyCode>(to_cur.ToUpper(), out to_cur_str);
+            Enum.TryParse<CurrencyCode>(from_cur.ToUpper(), out from_cur_code);
+            Enum.TryParse<CurrencyCode>(to_cur.ToUpper(), out to_cur_code);
 
             List<LatestCurrency> latestCurrencies = await apiCaller.GetLatestCurrencies(configRoot["Privat24:CashRate"]);
 
-            var buySaleRate = Parser.ConvertCurrency(latestCurrencies, from_cur_str, to_cur_str);
+            var buySaleRate = Parser.ConvertCurrency(latestCurrencies, from_cur_code, to_cur_code);
             if ((convertedAmount = Parser.GetConvertedAmount(buySaleRate.sale, Convert.ToDouble(amount), ModelState)) == -1)
                 return View();
 
