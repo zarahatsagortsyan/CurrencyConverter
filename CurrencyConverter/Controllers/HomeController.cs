@@ -22,11 +22,11 @@ namespace CurrencyConverter.Controllers
         private IConfigurationRoot configRoot;
 
         public HomeController(IApplicationDbContext context,
-                                IConfiguration configRoot,
+                                IConfiguration _configRoot,
                                 IApiCaller _apiCaller)
         {
             db = context;
-            configRoot = (IConfigurationRoot)configRoot;
+            configRoot = (IConfigurationRoot)_configRoot;
             apiCaller = _apiCaller;
         }
 
