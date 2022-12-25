@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CurrencyConverter.Functions
 {
-    public class Parser
+    public static class Parser
     {
         public static bool ValidSum(string sum)
         {
@@ -23,18 +23,17 @@ namespace CurrencyConverter.Functions
                     return false;
             return true;
         }
-
-        public static Dictionary<string, dynamic> SearchParser(string text)
+        public static Dictionary<string, string> SearchParser(string text)
         {
-            Dictionary<string, dynamic> result = new Dictionary<string, dynamic>();
+            Dictionary<string, string> result = new Dictionary<string, string>();
 
             string[] dividedSearch = text.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
             if (dividedSearch.Length == 4)
             {
                 if (!ValidSum(dividedSearch[0]))
-                    result.Add("sum", -1);
+                    result.Add("sum", "-1");
                 else
-                    result.Add("sum", Convert.ToDouble(dividedSearch[0]));
+                    result.Add("sum", dividedSearch[0]);
 
                 if (!ValidCurr(dividedSearch[1]))
                     result.Add("fromCurr", "invalid");
@@ -48,43 +47,48 @@ namespace CurrencyConverter.Functions
             }
             else
             {
-                result.Add("sum", -1);
+                result.Add("sum", "-1");
                 result.Add("fromCurr", "invalid");
                 result.Add("toCurr", "invalid");
             }
             return result;
         }
 
-        public static void ConvertCurrency(List<LatestCurrency> latestCurrencies, string from_cur, string to_cur, out double sale, out double buy)
+        public static (double sale, double buy) ConvertCurrency(List<LatestCurrency> latestCurrencies, CurrencyCode from_cur, CurrencyCode to_cur)
         {
-            sale = -1;
-            buy = -1;
+            double sale = -1;
+            double buy = -1;
 
-            if (from_cur == "UAH" && (to_cur == "USD" || to_cur == "EUR"))
+            if (from_cur == CurrencyCode.UAH && (to_cur == CurrencyCode.USD || to_cur == CurrencyCode.EUR))
             {
-                getSaleRate(latestCurrencies, to_cur, out sale, out buy);
-                sale = Math.Round((double)1 / sale, 5);
-                buy = Math.Round((double)1 / buy, 5);
+                //GetSaleRate(latestCurrencies, to_cur, out sale, out buy);
+                var fromUAH = GetSaleRate(latestCurrencies, to_cur);
+                sale = Math.Round((double)1 / fromUAH.sale, 5);
+                buy = Math.Round((double)1 / fromUAH.buy, 5);
             }
-            else if ((from_cur == "USD" || from_cur == "EUR") && to_cur == "UAH")
+            else if ((from_cur == CurrencyCode.USD || from_cur == CurrencyCode.EUR) && to_cur == CurrencyCode.UAH)
             {
-                getSaleRate(latestCurrencies, from_cur, out sale, out buy);
+                //GetSaleRate(latestCurrencies, from_cur, out sale, out buy);
+                var toUAH = GetSaleRate(latestCurrencies, from_cur);
+                sale = toUAH.sale;
+                buy = toUAH.buy;
             }
-            else if ((from_cur == "USD" && to_cur == "EUR") || (from_cur == "EUR" && to_cur == "USD"))
+            else if ((from_cur == CurrencyCode.USD && to_cur == CurrencyCode.EUR) || (from_cur == CurrencyCode.EUR && to_cur == CurrencyCode.USD))
             {
-                double rate_sale_to;
-                getSaleRate(latestCurrencies, from_cur, out sale, out buy);
-                getSaleRate(latestCurrencies, to_cur, out rate_sale_to, out buy);
+                var get_from_cur = GetSaleRate(latestCurrencies, from_cur);
+                var get_to_cur = GetSaleRate(latestCurrencies, to_cur);
+                double rate_sale_to = get_to_cur.sale;
 
-                sale = Math.Round((1 / rate_sale_to) / (1 / sale), 5);
-                buy = Math.Round((1 / rate_sale_to) / (1 / buy), 5);
-
+                sale = Math.Round((1 / rate_sale_to) / (1 / get_from_cur.sale), 5);
+                buy = Math.Round((1 / rate_sale_to) / (1 / get_from_cur.buy), 5);
             }
+            return (sale, buy);
         }
-        public static void getSaleRate(List<LatestCurrency> latestCurrencies, string ccy, out double saleRate, out double buyRate)
+
+        public static (double sale, double buy) GetSaleRate(List<LatestCurrency> latestCurrencies, CurrencyCode ccy)
         {
-            buyRate = 0;
-            saleRate = 0;
+            double buyRate = 0;
+            double saleRate = 0;
             foreach (var item in latestCurrencies)
             {
                 if (item.ccy == ccy)
@@ -92,9 +96,10 @@ namespace CurrencyConverter.Functions
                     saleRate = Convert.ToDouble(item.sale);
                     buyRate = Convert.ToDouble(item.buy);
 
-                    return;
+                    return (saleRate, buyRate);
                 }
             }
+            return (saleRate, buyRate);
         }
     }
 }

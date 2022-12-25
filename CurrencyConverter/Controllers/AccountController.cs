@@ -11,15 +11,18 @@ using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
 using CurrencyConverter.ViewModels;
 using Microsoft.AspNetCore.Authorization;
+using AutoMapper;
 
 namespace CurrencyConverter.Controllers
 {
     public class AccountController : Controller
     {
-        private readonly ApplicationDbContext db;
-        public AccountController(ApplicationDbContext context)
+        IApplicationDbContext db;
+        private readonly IMapper mapper;
+        public AccountController(IApplicationDbContext context, IMapper _mapper)
         {
             db = context;
+            mapper = _mapper;
         }
 
         #region SignInUser
@@ -69,7 +72,6 @@ namespace CurrencyConverter.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SignUpUser(RegisterViewModel model)
         {
-            // bool checkPhone = PhoneNumberChecker.CheckPhoneNumber(model.Phone);
             ViewData["Users"] = db.Users.ToList();
 
             if (ModelState.IsValid)
@@ -83,14 +85,17 @@ namespace CurrencyConverter.Controllers
                     Users users = await db.Users.FirstOrDefaultAsync(u => u.Email == model.Email);
                     if (users == null)
                     {
-                        db.Users.Add(new Users
-                        {
-                            LastName = model.FirstName,
-                            FirstName = model.LastName,
-                            Email = model.Email,
-                            BaseCur = model.BaseCur,
-                            Password = BCrypt.Net.BCrypt.HashPassword(model.Password)
-                        });
+                        Users newUser = new Users();
+                        newUser = mapper.Map<Users>(model);
+                        db.Users.Add(newUser);
+                        
+                        //db.Users.Add(
+                            //LastName = model.FirstName,
+                            //FirstName = model.LastName,
+                            //Email = model.Email,
+                            //BaseCur = Convert.ToString(model.BaseCur),
+                            //Password = BCrypt.Net.BCrypt.HashPassword(model.Password)
+                       // );
                         await db.SaveChangesAsync();
                         await Authenticate(model.Email);
 
@@ -106,17 +111,13 @@ namespace CurrencyConverter.Controllers
         }
         #endregion
 
-
         private async Task Authenticate(string userName)
         {
-            // ստեղծում ենք մեկ Claim
             var claims = new List<Claim>
             {
                 new Claim(ClaimsIdentity.DefaultNameClaimType, userName)
             };
-            // ստեղծում ենք ClaimsIdentity օբյեկտ
-            ClaimsIdentity id = new ClaimsIdentity(claims, "ApplicationCookie", ClaimsIdentity.DefaultNameClaimType, ClaimsIdentity.DefaultRoleClaimType);
-            // ներբեռնում ենք աուտենտիֆիկացիոն քուքիները
+            var id = new ClaimsIdentity(claims, "ApplicationCookie", ClaimsIdentity.DefaultNameClaimType, ClaimsIdentity.DefaultRoleClaimType);
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(id));
         }
 
@@ -146,18 +147,18 @@ namespace CurrencyConverter.Controllers
         {
             ViewData["Users"] = db.Users.ToList();
 
-            Users user1 = db.Users.FirstOrDefault(e => e.Id == users.Id);
+            Users user = db.Users.FirstOrDefault(e => e.Id == users.Id);
             if (ModelState.IsValid)
             {
-                bool match = BCrypt.Net.BCrypt.Verify(users.Password, user1.Password);
+                bool match = BCrypt.Net.BCrypt.Verify(users.Password, user.Password);
                 if (match)
                 {
-                    user1.FirstName = users.FirstName;
-                    user1.LastName = users.LastName;
-                    user1.BaseCur = users.BaseCur;
-                    user1.Email = users.Email;
-                    user1.Password = BCrypt.Net.BCrypt.HashPassword(users.Password);
-                    db.Entry(user1).State = EntityState.Modified;
+                    user.FirstName = users.FirstName;
+                    user.LastName = users.LastName;
+                    user.BaseCur = users.BaseCur;
+                    user.Email = users.Email;
+                    user.Password = BCrypt.Net.BCrypt.HashPassword(users.Password);
+                    db.Entry(user).State = EntityState.Modified;
                     db.SaveChanges();
                     return Redirect("/Home/Index");
                 }
@@ -166,6 +167,5 @@ namespace CurrencyConverter.Controllers
             }
             return View(users);
         }
-
     }
 }

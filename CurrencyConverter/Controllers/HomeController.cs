@@ -1,28 +1,33 @@
 ﻿using CurrencyConverter.Models;
 using CurrencyConverter.ViewModels;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using CurrencyConverter.Functions;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using System.Diagnostics;
 
 namespace CurrencyConverter.Controllers
 {
     public class HomeController : Controller
     {
-        readonly ApplicationDbContext db;
+        IApplicationDbContext db;
+        IApiCaller apiCaller;
+        private IConfigurationRoot configRoot;
 
-        public HomeController(ApplicationDbContext context)
+        public HomeController(IApplicationDbContext context,
+                                IConfiguration configRoot,
+                                IApiCaller _apiCaller)
         {
             db = context;
+            configRoot = (IConfigurationRoot)configRoot;
+            apiCaller = _apiCaller;
         }
 
         [HttpGet]
@@ -31,7 +36,7 @@ namespace CurrencyConverter.Controllers
             Currency currency = new Currency();
             using (var httpClient = new HttpClient())
             {
-                using (var response = await httpClient.GetAsync("https://api.privatbank.ua/p24api/exchange_rates?date=01.12.2014"))
+                using (var response = await httpClient.GetAsync(configRoot["Privat24:RateHistory"]))
                 {
                     string apiResponse = await response.Content.ReadAsStringAsync();
                     currency = JsonConvert.DeserializeObject<Currency>(apiResponse);
@@ -46,50 +51,28 @@ namespace CurrencyConverter.Controllers
         #region GettingCurrenciesFromPrivatBank
         public async Task<IActionResult> Index(ConverterViewModel viewModel)
         {
-            string base_ccy;
-            base_ccy = "UAH";
+            CurrencyCode base_ccy = CurrencyCode.UAH;
 
-            if (viewModel.base_ccy != null)
+            if (viewModel.base_ccy != 0)
                 base_ccy = viewModel.base_ccy;
-
-            List<LatestCurrency> CashRate = new List<LatestCurrency>();
-            List<LatestCurrency> NonCashRate = new List<LatestCurrency>();
 
             if (User.Identity.IsAuthenticated)
             {
                 Users user = await db.Users.FirstOrDefaultAsync(u => u.Email == User.Identity.Name);
                 if (user != null)
-                    base_ccy = user.BaseCur;
+                    Enum.TryParse<CurrencyCode>(user.BaseCur, out base_ccy);
             }
 
-            using (var httpClient = new HttpClient())
+            List<LatestCurrency> cashRate = await apiCaller.GetLatestCurrencies(configRoot["Privat24:CashRate"]);
+            List<LatestCurrency> nonCashRate = await apiCaller.GetLatestCurrencies(configRoot["Privat24:NonCashRate"]);
+
+            List<LatestCurrency> curByBaseCash = ExchangeByBaseCCY(base_ccy, cashRate);
+            List<LatestCurrency> curByBaseNonCash = ExchangeByBaseCCY(base_ccy, nonCashRate);
+
+            if (base_ccy == CurrencyCode.UAH)
             {
-                using (var response = await httpClient.GetAsync("https://api.privatbank.ua/p24api/pubinfo?json&exchange&coursid=5"))
-                {
-                    string apiResponse = await response.Content.ReadAsStringAsync();
-                    CashRate = JsonConvert.DeserializeObject<List<LatestCurrency>>(apiResponse);
-                }
-            }
-
-            using (var httpClient = new HttpClient())
-            {
-                using (var response = await httpClient.GetAsync("https://api.privatbank.ua/p24api/pubinfo?exchange&json&coursid=11"))
-                {
-                    string apiResponse = await response.Content.ReadAsStringAsync();
-                    NonCashRate = JsonConvert.DeserializeObject<List<LatestCurrency>>(apiResponse);
-                }
-            }
-
-            List<LatestCurrency> curByBaseCash = new List<LatestCurrency>();
-            curByBaseCash = ExchangeByBaseCCY(base_ccy, CashRate);
-
-            List<LatestCurrency> curByBaseNonCash = new List<LatestCurrency>();
-            curByBaseNonCash = ExchangeByBaseCCY(base_ccy, NonCashRate);
-
-            if (base_ccy == "UAH")
-            {
-                ViewData["CashRate"] = CashRate;
-                ViewData["NonCashRate"] = NonCashRate;
+                ViewData["CashRate"] = cashRate;
+                ViewData["NonCashRate"] = nonCashRate;
             }
             else
             {
@@ -105,43 +88,45 @@ namespace CurrencyConverter.Controllers
 
         #region CalculatingRatesByBase
         [HttpGet]
-        public static List<LatestCurrency> ExchangeByBaseCCY(string base_ccy, List<LatestCurrency> CashRate)
+        public static List<LatestCurrency> ExchangeByBaseCCY(CurrencyCode base_ccy, List<LatestCurrency> CashRate)
         {
             List<LatestCurrency> curByBase = new List<LatestCurrency>();
-            double _buy, _sale;
+
             switch (base_ccy)
             {
-                case "USD":
+                case CurrencyCode.USD:
 
-                    Parser.ConvertCurrency(CashRate, "UAH", "USD", out _sale, out _buy);
+                    var curTuple = Parser.ConvertCurrency(CashRate, CurrencyCode.UAH, CurrencyCode.USD);
                     curByBase.Add(new LatestCurrency
                     {
-                        ccy = "UAH",
-                        buy = Convert.ToString(_buy),
-                        sale = Convert.ToString(_sale)
+                        ccy = CurrencyCode.UAH,
+                        buy = Convert.ToString(curTuple.buy),
+                        sale = Convert.ToString(curTuple.sale)
                     });
-                    Parser.ConvertCurrency(CashRate, "EUR", "USD", out _sale, out _buy);
+
+                    curTuple = Parser.ConvertCurrency(CashRate, CurrencyCode.EUR, CurrencyCode.USD);
                     curByBase.Add(new LatestCurrency
                     {
-                        ccy = "EUR",
-                        buy = Convert.ToString(_buy),
-                        sale = Convert.ToString(_sale)
+                        ccy = CurrencyCode.EUR,
+                        buy = Convert.ToString(curTuple.buy),
+                        sale = Convert.ToString(curTuple.sale)
                     });
                     break;
-                case "EUR":
-                    Parser.ConvertCurrency(CashRate, "UAH", "EUR", out _sale, out _buy);
+                case CurrencyCode.EUR:
+                    curTuple = Parser.ConvertCurrency(CashRate, CurrencyCode.UAH, CurrencyCode.EUR);
                     curByBase.Add(new LatestCurrency
                     {
-                        ccy = "UAH",
-                        buy = Convert.ToString(_buy),
-                        sale = Convert.ToString(_sale)
+                        ccy = CurrencyCode.UAH,
+                        buy = Convert.ToString(curTuple.buy),
+                        sale = Convert.ToString(curTuple.sale)
                     });
-                    Parser.ConvertCurrency(CashRate, "USD", "EUR", out _sale, out _buy);
+
+                    curTuple = Parser.ConvertCurrency(CashRate, CurrencyCode.USD, CurrencyCode.EUR);
                     curByBase.Add(new LatestCurrency
                     {
-                        ccy = "USD",
-                        buy = Convert.ToString(_buy),
-                        sale = Convert.ToString(_sale)
+                        ccy = CurrencyCode.USD,
+                        buy = Convert.ToString(curTuple.buy),
+                        sale = Convert.ToString(curTuple.sale)
                     });
                     break;
                 default:
@@ -164,13 +149,11 @@ namespace CurrencyConverter.Controllers
         [HttpPost]
         public async Task<IActionResult> ConverterPage(ConverterViewModel converter)
         {
-            Dictionary<string, dynamic> curPairs = new Dictionary<string, dynamic>();
-            List<LatestCurrency> latestCurrencies = new List<LatestCurrency>();
+            Dictionary<string, string> curPairs = new Dictionary<string, string>();
+            string from_cur, to_cur, amount;
+            CurrencyCode from_cur_str, to_cur_str;
+           
             ViewData["Users"] = db.Users.ToList();
-
-            dynamic from_cur, to_cur, amount;
-            string from_cur_str, to_cur_str;
-            double sale, buy;
 
             curPairs = Parser.SearchParser(converter.convertText);
 
@@ -181,38 +164,31 @@ namespace CurrencyConverter.Controllers
             curPairs.TryGetValue("toCurr", out to_cur);
             curPairs.TryGetValue("sum", out amount);
 
-            from_cur_str = Convert.ToString(from_cur);
-            to_cur_str = Convert.ToString(to_cur);
+            Enum.TryParse<CurrencyCode>(from_cur.ToUpper(), out from_cur_str);
+            Enum.TryParse<CurrencyCode>(to_cur.ToUpper(), out to_cur_str);
 
-            using (var httpClient = new HttpClient())
-            {
-                using (var response = await httpClient.GetAsync("https://api.privatbank.ua/p24api/pubinfo?json&exchange&coursid=5"))
-                {
-                    string apiResponse = await response.Content.ReadAsStringAsync();
-                    latestCurrencies = JsonConvert.DeserializeObject<List<LatestCurrency>>(apiResponse);
-                }
-            }
+            List<LatestCurrency> latestCurrencies = await apiCaller.GetLatestCurrencies(configRoot["Privat24:CashRate"]);
 
-            Parser.ConvertCurrency(latestCurrencies, from_cur_str.ToUpper(), to_cur_str.ToUpper(), out sale, out buy);
-            if (sale < 0 || buy < 0)
+            var curTuple = Parser.ConvertCurrency(latestCurrencies, from_cur_str, to_cur_str);
+            if (curTuple.sale < 0 || curTuple.sale < 0)
             {
                 ModelState.AddModelError("", "Unavailable currency. Use these: USD, EUR, UAH");
                 return View();
             }
 
             ViewBag.convertText = converter.convertText;
-            ViewBag.result = sale * Convert.ToDouble(amount);
+            ViewBag.result = curTuple.sale * Convert.ToDouble(amount);
             return View();
         }
         #endregion
 
         #region validatingSearchInput
-        public static bool ErrorRedirection(Dictionary<string, dynamic> curPairs, ModelStateDictionary ModelState)
+        public static bool ErrorRedirection(Dictionary<string, string> curPairs, ModelStateDictionary ModelState)
         {
-            dynamic value;
+            string value;
             if (curPairs.TryGetValue("sum", out value))
             {
-                if (value == -1)
+                if (value == "-1")
                 {
                     ModelState.AddModelError("", "invalid input!");
                     return false;

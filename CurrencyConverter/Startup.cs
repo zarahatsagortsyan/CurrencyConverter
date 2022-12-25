@@ -27,6 +27,12 @@ namespace CurrencyConverter
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddScoped<IApplicationDbContext, ApplicationDbContext>();
+            services.AddScoped(typeof(IApplicationDbContext), typeof(ApplicationDbContext));
+
+            services.AddScoped<IApiCaller, ApiCaller>();
+            services.AddScoped(typeof(IApiCaller), typeof(ApiCaller));
+
             services.AddControllersWithViews();
             services.AddRazorPages();
             services.AddDbContext<ApplicationDbContext>(
@@ -37,6 +43,8 @@ namespace CurrencyConverter
                {
                    options.LoginPath = new Microsoft.AspNetCore.Http.PathString("/Account/SignInUser");
                });
+
+            services.AddAutoMapper(typeof(Startup));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
