@@ -1,11 +1,9 @@
 ﻿using CurrencyConverter.Models;
 using CurrencyConverter.ViewModels;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using System.Threading.Tasks;
 using CurrencyConverter.Functions;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
@@ -30,24 +28,6 @@ namespace CurrencyConverter.Controllers
             apiCaller = _apiCaller;
         }
 
-        [HttpGet]
-        public async Task<IActionResult> CurHistory()
-        {
-            Currency currency = new Currency();
-            using (var httpClient = new HttpClient())
-            {
-                using (var response = await httpClient.GetAsync(configRoot["Privat24:RateHistory"]))
-                {
-                    string apiResponse = await response.Content.ReadAsStringAsync();
-                    currency = JsonConvert.DeserializeObject<Currency>(apiResponse);
-                }
-            }
-
-            ViewData["Users"] = db.Users.ToList();
-
-            return View(currency);
-        }
-
         #region GettingCurrenciesFromPrivatBank
         public async Task<IActionResult> Index(ConverterViewModel viewModel)
         {
@@ -66,8 +46,8 @@ namespace CurrencyConverter.Controllers
             List<LatestCurrency> cashRate = await apiCaller.GetLatestCurrencies(configRoot["Privat24:CashRate"]);
             List<LatestCurrency> nonCashRate = await apiCaller.GetLatestCurrencies(configRoot["Privat24:NonCashRate"]);
 
-            List<LatestCurrency> curByBaseCash = ExchangeByBaseCCY(base_ccy, cashRate);
-            List<LatestCurrency> curByBaseNonCash = ExchangeByBaseCCY(base_ccy, nonCashRate);
+            List<LatestCurrency> curByBaseCash = Parser.ExchangeByBaseCCY(base_ccy, cashRate);
+            List<LatestCurrency> curByBaseNonCash = Parser.ExchangeByBaseCCY(base_ccy, nonCashRate);
 
             if (base_ccy == CurrencyCode.UAH)
             {
@@ -86,57 +66,6 @@ namespace CurrencyConverter.Controllers
 
         #endregion
 
-        #region CalculatingRatesByBase
-        [HttpGet]
-        public static List<LatestCurrency> ExchangeByBaseCCY(CurrencyCode base_ccy, List<LatestCurrency> CashRate)
-        {
-            List<LatestCurrency> curByBase = new List<LatestCurrency>();
-
-            switch (base_ccy)
-            {
-                case CurrencyCode.USD:
-
-                    var curTuple = Parser.ConvertCurrency(CashRate, CurrencyCode.UAH, CurrencyCode.USD);
-                    curByBase.Add(new LatestCurrency
-                    {
-                        ccy = CurrencyCode.UAH,
-                        buy = Convert.ToString(curTuple.buy),
-                        sale = Convert.ToString(curTuple.sale)
-                    });
-
-                    curTuple = Parser.ConvertCurrency(CashRate, CurrencyCode.EUR, CurrencyCode.USD);
-                    curByBase.Add(new LatestCurrency
-                    {
-                        ccy = CurrencyCode.EUR,
-                        buy = Convert.ToString(curTuple.buy),
-                        sale = Convert.ToString(curTuple.sale)
-                    });
-                    break;
-                case CurrencyCode.EUR:
-                    curTuple = Parser.ConvertCurrency(CashRate, CurrencyCode.UAH, CurrencyCode.EUR);
-                    curByBase.Add(new LatestCurrency
-                    {
-                        ccy = CurrencyCode.UAH,
-                        buy = Convert.ToString(curTuple.buy),
-                        sale = Convert.ToString(curTuple.sale)
-                    });
-
-                    curTuple = Parser.ConvertCurrency(CashRate, CurrencyCode.USD, CurrencyCode.EUR);
-                    curByBase.Add(new LatestCurrency
-                    {
-                        ccy = CurrencyCode.USD,
-                        buy = Convert.ToString(curTuple.buy),
-                        sale = Convert.ToString(curTuple.sale)
-                    });
-                    break;
-                default:
-                    break;
-            }
-
-            return curByBase;
-        }
-        #endregion
-
         #region ConverterPage
         [HttpGet]
         public IActionResult ConverterPage()
@@ -150,13 +79,13 @@ namespace CurrencyConverter.Controllers
         public async Task<IActionResult> ConverterPage(ConverterViewModel converter)
         {
             Dictionary<string, string> curPairs = new Dictionary<string, string>();
-            string from_cur, to_cur, amount;
             CurrencyCode from_cur_str, to_cur_str;
-           
+            string from_cur, to_cur, amount;
+            double convertedAmount;
+
             ViewData["Users"] = db.Users.ToList();
 
             curPairs = Parser.SearchParser(converter.convertText);
-
             if (!(ErrorRedirection(curPairs, ModelState)))
                 return View();
 
@@ -169,15 +98,12 @@ namespace CurrencyConverter.Controllers
 
             List<LatestCurrency> latestCurrencies = await apiCaller.GetLatestCurrencies(configRoot["Privat24:CashRate"]);
 
-            var curTuple = Parser.ConvertCurrency(latestCurrencies, from_cur_str, to_cur_str);
-            if (curTuple.sale < 0 || curTuple.sale < 0)
-            {
-                ModelState.AddModelError("", "Unavailable currency. Use these: USD, EUR, UAH");
+            var buySaleRate = Parser.ConvertCurrency(latestCurrencies, from_cur_str, to_cur_str);
+            if ((convertedAmount = Parser.GetConvertedAmount(buySaleRate.sale, Convert.ToDouble(amount), ModelState)) == -1)
                 return View();
-            }
 
             ViewBag.convertText = converter.convertText;
-            ViewBag.result = curTuple.sale * Convert.ToDouble(amount);
+            ViewBag.result = convertedAmount;
             return View();
         }
         #endregion

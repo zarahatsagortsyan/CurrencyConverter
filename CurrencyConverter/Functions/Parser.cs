@@ -1,4 +1,5 @@
 ﻿using CurrencyConverter.Models;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -100,6 +101,62 @@ namespace CurrencyConverter.Functions
                 }
             }
             return (saleRate, buyRate);
+        }
+        public static List<LatestCurrency> ExchangeByBaseCCY(CurrencyCode base_ccy, List<LatestCurrency> CashRate)
+        {
+            List<LatestCurrency> curByBase = new List<LatestCurrency>();
+
+            switch (base_ccy)
+            {
+                case CurrencyCode.USD:
+
+                    var curTuple = Parser.ConvertCurrency(CashRate, CurrencyCode.UAH, CurrencyCode.USD);
+                    curByBase.Add(new LatestCurrency
+                    {
+                        ccy = CurrencyCode.UAH,
+                        buy = Convert.ToString(curTuple.buy),
+                        sale = Convert.ToString(curTuple.sale)
+                    });
+
+                    curTuple = Parser.ConvertCurrency(CashRate, CurrencyCode.EUR, CurrencyCode.USD);
+                    curByBase.Add(new LatestCurrency
+                    {
+                        ccy = CurrencyCode.EUR,
+                        buy = Convert.ToString(curTuple.buy),
+                        sale = Convert.ToString(curTuple.sale)
+                    });
+                    break;
+                case CurrencyCode.EUR:
+                    curTuple = Parser.ConvertCurrency(CashRate, CurrencyCode.UAH, CurrencyCode.EUR);
+                    curByBase.Add(new LatestCurrency
+                    {
+                        ccy = CurrencyCode.UAH,
+                        buy = Convert.ToString(curTuple.buy),
+                        sale = Convert.ToString(curTuple.sale)
+                    });
+
+                    curTuple = Parser.ConvertCurrency(CashRate, CurrencyCode.USD, CurrencyCode.EUR);
+                    curByBase.Add(new LatestCurrency
+                    {
+                        ccy = CurrencyCode.USD,
+                        buy = Convert.ToString(curTuple.buy),
+                        sale = Convert.ToString(curTuple.sale)
+                    });
+                    break;
+                default:
+                    break;
+            }
+
+            return curByBase;
+        }
+        public static double GetConvertedAmount(double saleRate, double amount, ModelStateDictionary ModelState)
+        {
+            if (saleRate < 0 || saleRate < 0)
+            {
+                ModelState.AddModelError("", "Unavailable currency. Use these: USD, EUR, UAH");
+                return (-1);
+            }
+            return Math.Round(saleRate * Convert.ToDouble(amount), 5);
         }
     }
 }

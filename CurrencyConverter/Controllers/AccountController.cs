@@ -87,15 +87,9 @@ namespace CurrencyConverter.Controllers
                     {
                         Users newUser = new Users();
                         newUser = mapper.Map<Users>(model);
+                        newUser.Password = BCrypt.Net.BCrypt.HashPassword(model.Password);
                         db.Users.Add(newUser);
                         
-                        //db.Users.Add(
-                            //LastName = model.FirstName,
-                            //FirstName = model.LastName,
-                            //Email = model.Email,
-                            //BaseCur = Convert.ToString(model.BaseCur),
-                            //Password = BCrypt.Net.BCrypt.HashPassword(model.Password)
-                       // );
                         await db.SaveChangesAsync();
                         await Authenticate(model.Email);
 

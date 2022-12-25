@@ -1,12 +1,9 @@
 ﻿using CurrencyConverter.ViewModels;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using AutoMapper;
+
 namespace CurrencyConverter.Models
 {
-    public class UserProfile:Profile
+    public class UserProfile : Profile
     {
         public UserProfile()
         {

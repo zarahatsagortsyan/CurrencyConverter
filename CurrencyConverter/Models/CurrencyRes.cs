@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace CurrencyConverter.Models
+﻿namespace CurrencyConverter.Models
 {
     public class CurrencyRes
     {
@@ -13,10 +8,5 @@ namespace CurrencyConverter.Models
         public string purchaseRateNB { get; set; }
         public string saleRate { get; set; }
         public string purchaseRate { get; set; }
-
-        //"ccy": "EUR",
-        //"base_ccy": "UAH",
-        //"buy": "40.40000",
-        //"sale": "41.40000"
     }
 }

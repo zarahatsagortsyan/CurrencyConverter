@@ -1,9 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -21,7 +19,7 @@ namespace CurrencyConverter.Models
             Database.EnsureCreated();
         }
     }
-    public interface IApplicationDbContext: IDisposable
+    public interface IApplicationDbContext : IDisposable
     {
         DbSet<Users> Users { get; set; }
         int SaveChanges();
