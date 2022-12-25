@@ -22,8 +22,8 @@ namespace CurrencyConverter
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddTransient<IApplicationDbContext, ApplicationDbContext>();
-            services.AddTransient(typeof(IApplicationDbContext), typeof(ApplicationDbContext));
+            services.AddScoped<IApplicationDbContext, ApplicationDbContext>();
+            services.AddScoped(typeof(IApplicationDbContext), typeof(ApplicationDbContext));
 
             services.AddScoped<IApiCaller, ApiCaller>();
             services.AddScoped(typeof(IApiCaller), typeof(ApiCaller));
