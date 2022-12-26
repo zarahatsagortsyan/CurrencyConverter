@@ -62,14 +62,12 @@ namespace CurrencyConverter.Functions
 
             if (from_cur == CurrencyCode.UAH && (to_cur == CurrencyCode.USD || to_cur == CurrencyCode.EUR))
             {
-                //GetSaleRate(latestCurrencies, to_cur, out sale, out buy);
                 var fromUAH = GetSaleRate(latestCurrencies, to_cur);
                 sale = Math.Round((double)1 / fromUAH.sale, 5);
                 buy = Math.Round((double)1 / fromUAH.buy, 5);
             }
             else if ((from_cur == CurrencyCode.USD || from_cur == CurrencyCode.EUR) && to_cur == CurrencyCode.UAH)
             {
-                //GetSaleRate(latestCurrencies, from_cur, out sale, out buy);
                 var toUAH = GetSaleRate(latestCurrencies, from_cur);
                 sale = toUAH.sale;
                 buy = toUAH.buy;
