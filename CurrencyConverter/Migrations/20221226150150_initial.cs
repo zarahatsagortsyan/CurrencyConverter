@@ -15,7 +15,7 @@ namespace CurrencyConverter.Migrations
                     FirstName = table.Column<string>(maxLength: 50, nullable: true),
                     LastName = table.Column<string>(maxLength: 50, nullable: true),
                     Email = table.Column<string>(maxLength: 50, nullable: true),
-                    Password = table.Column<string>(maxLength: 50, nullable: true),
+                    Password = table.Column<string>(nullable: true),
                     BaseCur = table.Column<string>(maxLength: 3, nullable: true)
                 },
                 constraints: table =>
